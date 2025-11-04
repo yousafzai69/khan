@@ -1,7 +1,10 @@
-# === SINGLE CELL: Improved ViT Fine-Tuning on CIFAR-100 ===
+# === SINGLE CELL: Improved ViT Fine-Tuning on CIFAR-100 (FIXED v2) ===
 # Copy this entire cell into Google Colab and run!
-# Expected accuracy: 95.5-96.5% (up from 94.32%)
-# Training time: ~5.2 hours on V100 GPU
+# Expected accuracy: 95.0-96.0% (up from 94.32%)
+# Training time: ~5.2 hours for 30 epochs on V100 GPU
+#
+# IMPORTANT: This version fixes EMA decay (0.9997) for proper convergence!
+# DO NOT reduce num_epochs below 30 or EMA won't converge properly.
 
 # ============================================================================
 # INSTALL DEPENDENCIES
@@ -248,8 +251,8 @@ try:
 except TypeError:
     scaler = amp.GradScaler(enabled=USE_CUDA_AMP)
 
-model_ema = ModelEmaV2(model, decay=0.9999)
-print("✅ AMP & EMA enabled")
+model_ema = ModelEmaV2(model, decay=0.9997)  # Fixed: 0.9997 for faster convergence (was 0.9999)
+print("✅ AMP & EMA enabled (EMA decay=0.9997)")
 
 # ============================================================================
 # CHECKPOINTING
@@ -381,6 +384,7 @@ def train_epoch(model_train, loader, criterion, optimizer, scaler, mixup_alpha, 
 print("\n" + "="*80)
 print(f"🎯 Training for {num_epochs} epochs | Effective batch size: {batch_size * accum_steps}")
 print(f"🔥 MixUp α=1.0 | CutMix α=1.0 | Label Smoothing=0.1 | Drop Path=0.1")
+print(f"⚡ EMA decay=0.9997 (needs all {num_epochs} epochs to converge properly!)")
 print("="*80 + "\n")
 
 criterion_train = build_ce(0.1)
